@@ -34,12 +34,29 @@ spec:
             args:
               - -c
               - "restic -r {{ .Values.repo }} unlock"
+            {{- if or .Values.backupJob.env }}
+            env:
+              {{- range $key, $value := .Values.backupJob.env }}
+              - name: {{ $key }}
+                value: {{ $value | quote }}
+              {{- end }}
+            {{- end }}
             envFrom:
               - secretRef:
                   name: {{ .Values.secretName }}
             {{- with .Values.cleanupJob.resources }}
             resources:
               {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- if or .Values.pvc .Values.backupJob.backup.additionalVolumeMounts }}
+            volumeMounts:
+            {{- end }}
+            {{- if .Values.pvc }}
+              - mountPath: "/data"
+                name: data
+            {{- end }}
+            {{- if .Values.backupJob.backup.additionalVolumeMounts }}
+              {{- toYaml .Values.backupJob.backup.additionalVolumeMounts | nindent 14 }}
             {{- end }}
           containers:
           - name: cleanup
@@ -73,9 +90,26 @@ spec:
             envFrom:
               - secretRef:
                   name: {{ .Values.secretName }}
+             {{- if or .Values.backupJob.env }}
+            env:
+              {{- range $key, $value := .Values.backupJob.env }}
+              - name: {{ $key }}
+                value: {{ $value | quote }}
+              {{- end }}
+            {{- end }}
             {{- with .Values.cleanupJob.resources }}
             resources:
               {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- if or .Values.pvc .Values.backupJob.backup.additionalVolumeMounts }}
+            volumeMounts:
+            {{- end }}
+            {{- if .Values.pvc }}
+              - mountPath: "/data"
+                name: data
+            {{- end }}
+            {{- if .Values.backupJob.backup.additionalVolumeMounts }}
+              {{- toYaml .Values.backupJob.backup.additionalVolumeMounts | nindent 14 }}
             {{- end }}
           restartPolicy: {{ .Values.cleanupJob.restartPolicy }}
           {{- with .Values.cleanupJob.nodeSelector }}
@@ -98,5 +132,16 @@ spec:
           {{- with .Values.cleanupJob.tolerations }}
           tolerations:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.pvc .Values.backupJob.additionalVolumes }}
+          volumes:
+          {{- end }}
+          {{- if .Values.pvc }}
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ .Values.pvc }}
+          {{- end }}
+          {{- if .Values.backupJob.additionalVolumes }}
+            {{- toYaml .Values.backupJob.additionalVolumes | nindent 12 }}
           {{- end }}
 {{- end }}
