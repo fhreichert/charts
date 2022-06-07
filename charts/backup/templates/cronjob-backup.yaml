@@ -33,7 +33,7 @@ spec:
             args:
               - -c
               - "restic -r {{ .Values.repo }} unlock || restic -r {{ .Values.repo }} init"
-            {{- if or .Values.backupJob.env }}
+            {{- if .Values.backupJob.env }}
             env:
               {{- range $key, $value := .Values.backupJob.env }}
               - name: {{ $key }}
@@ -79,7 +79,7 @@ spec:
             envFrom:
               - secretRef:
                   name: {{ .Values.secretName }}
-            {{- if or .Values.backupJob.env }}
+            {{- if .Values.backupJob.env }}
             env:
               {{- range $key, $value := .Values.backupJob.env }}
               - name: {{ $key }}
